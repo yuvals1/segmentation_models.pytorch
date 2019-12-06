@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 try:
     from inplace_abn import InPlaceABN
@@ -58,10 +59,34 @@ class SCSEModule(nn.Module):
             nn.Conv2d(in_channels // reduction, in_channels, 1),
             nn.Sigmoid(),
         )
-        self.sSE = nn.Sequential(nn.Conv2d(in_channels, in_channels, 1), nn.Sigmoid())
+        self.sSE = nn.Sequential(nn.Conv2d(in_channels, 1, 1), nn.Sigmoid())
 
     def forward(self, x):
         return x * self.cSE(x) + x * self.sSE(x)
+
+
+class EncoderDecoderAttention(nn.Module):
+    def __init__(self, encoder_channels, decoder_channels, out_channels):
+        super().__init__()
+        self.encoder_channels = encoder_channels
+        self.decoder_channels = decoder_channels
+        self.out_channels = out_channels
+        self.attention_weight = nn.Parameter(torch.Tensor(encoder_channels, out_channels, decoder_channels))
+        self.batchnorm = nn.BatchNorm2d(out_channels)
+        self.activation = nn.Tanh()
+        nn.init.xavier_uniform_(self.attention_weight)
+
+    def forward(self, encoder_inp, decoder_inp):
+        x1 = encoder_inp.permute(0, 2, 3, 1)
+        batch_size, height, width = x1.shape[0:-1]
+        x2 = decoder_inp.permute(0, 2, 3, 1)
+        result = torch.mm(x1.reshape(-1, self.encoder_channels), self.attention_weight.view(self.encoder_channels, -1))
+        result = result.view(-1, self.out_channels, self.decoder_channels)
+        result = torch.bmm(result, x2.reshape(-1, self.decoder_channels, 1)).\
+            reshape(batch_size, height, width, self.out_channels).permute(0, 3, 1, 2)
+        result = self.batchnorm(result)
+        result = self.activation(result)
+        return result
 
 
 class Activation(nn.Module):
@@ -98,6 +123,8 @@ class Attention(nn.Module):
             self.attention = nn.Identity(**params)
         elif name == 'scse':
             self.attention = SCSEModule(**params)
+        elif name == 'eda':
+            self.attention = EncoderDecoderAttention(**params)
         else:
             raise ValueError("Attention {} is not implemented".format(name))
 

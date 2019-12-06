@@ -27,3 +27,4 @@ class ClassificationHead(nn.Sequential):
         super().__init__(pool, flatten, dropout, linear, activation)
 
         initialize_head(self)
+
