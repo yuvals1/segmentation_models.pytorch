@@ -57,7 +57,7 @@ class AttentionDecoderBlock(nn.Module):
     ):
         super().__init__()
 
-        attention_channels = skip_channels // 5
+        attention_channels = in_channels // 5
 
         self.conv1 = md.Conv2dReLU(
             in_channels + skip_channels + attention_channels,
@@ -73,7 +73,7 @@ class AttentionDecoderBlock(nn.Module):
             padding=1,
             use_batchnorm=use_batchnorm,
         )
-        if skip_channels:
+        if attention_channels:
             self.attention = md.EncoderDecoderAttention(skip_channels, in_channels, attention_channels)
 
     def forward(self, x, skip=None):
