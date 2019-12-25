@@ -21,6 +21,7 @@ Methods:
         also should support number of features according to specified depth, e.g. if depth = 5,
         number of feature tensors = 6 (one with same resolution as input and 5 downsampled),
         depth = 3 -> number of feature tensors = 4 (one with same resolution as input and 3 downsampled).
+        some
 """
 
 from efficientnet_pytorch import EfficientNet
