@@ -21,16 +21,17 @@ Methods:
         also should support number of features according to specified depth, e.g. if depth = 5,
         number of feature tensors = 6 (one with same resolution as input and 5 downsampled),
         depth = 3 -> number of feature tensors = 4 (one with same resolution as input and 3 downsampled).
+        some
 """
 
-from efficientnet_pytorch import EfficientNet
+from efficientnet_pytorch import EfficientNetST
 from efficientnet_pytorch.utils import url_map, get_model_params
 
 from ._base import EncoderMixin
 from ..base.module import Module
 
 
-class EfficientNetEncoder(EfficientNet, EncoderMixin, Module):
+class EfficientNetSTEncoder(EfficientNetST, EncoderMixin, Module):
     def __init__(self, stage_idxs, out_channels, model_name, depth=5):
 
         blocks_args, global_params = get_model_params(model_name, override_params=None)
@@ -50,6 +51,7 @@ class EfficientNetEncoder(EfficientNet, EncoderMixin, Module):
         if self._depth > 0:
             x = self._swish(self._bn0(self._conv_stem(x)))
             features.append(x)
+            x = self._pool_stem(x)
 
         if self._depth > 1:
             skip_connection_idx = 0
@@ -57,10 +59,10 @@ class EfficientNetEncoder(EfficientNet, EncoderMixin, Module):
                 drop_connect_rate = self._global_params.drop_connect_rate
                 if drop_connect_rate:
                     drop_connect_rate *= float(idx) / len(self._blocks)
-                x = block(x, drop_connect_rate=drop_connect_rate)
+                x, block_features = block(x, drop_connect_rate=drop_connect_rate)
                 if idx == self._stage_idxs[skip_connection_idx] - 1:
                     skip_connection_idx += 1
-                    features.append(x)
+                    features.append(block_features)
                     if skip_connection_idx + 1 == self._depth:
                         break
 
@@ -86,9 +88,9 @@ def _get_pretrained_settings(encoder):
     return pretrained_settings
 
 
-efficient_net_encoders = {
-    "efficientnet-b0": {
-        "encoder": EfficientNetEncoder,
+efficient_netst_encoders = {
+    "efficientnetst-b0": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b0"),
         "params": {
             "out_channels": (3, 32, 24, 40, 112, 320),
@@ -96,8 +98,8 @@ efficient_net_encoders = {
             "model_name": "efficientnet-b0",
         },
     },
-    "efficientnet-b1": {
-        "encoder": EfficientNetEncoder,
+    "efficientnetst-b1": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b1"),
         "params": {
             "out_channels": (3, 32, 24, 40, 112, 320),
@@ -105,8 +107,8 @@ efficient_net_encoders = {
             "model_name": "efficientnet-b1",
         },
     },
-    "efficientnet-b2": {
-        "encoder": EfficientNetEncoder,
+    "efficientnetst-b2": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b2"),
         "params": {
             "out_channels": (3, 32, 24, 48, 120, 352),
@@ -114,8 +116,8 @@ efficient_net_encoders = {
             "model_name": "efficientnet-b2",
         },
     },
-    "efficientnet-b3": {
-        "encoder": EfficientNetEncoder,
+    "efficientnetst-b3": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b3"),
         "params": {
             "out_channels": (3, 40, 32, 48, 136, 384),
@@ -123,8 +125,8 @@ efficient_net_encoders = {
             "model_name": "efficientnet-b3",
         },
     },
-    "efficientnet-b4": {
-        "encoder": EfficientNetEncoder,
+    "efficientnetst-b4": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b4"),
         "params": {
             "out_channels": (3, 48, 32, 56, 160, 448),
@@ -132,8 +134,8 @@ efficient_net_encoders = {
             "model_name": "efficientnet-b4",
         },
     },
-    "efficientnet-b5": {
-        "encoder": EfficientNetEncoder,
+    "efficientnetst-b5": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b5"),
         "params": {
             "out_channels": (3, 48, 40, 64, 176, 512),
@@ -141,8 +143,8 @@ efficient_net_encoders = {
             "model_name": "efficientnet-b5",
         },
     },
-    "efficientnet-b6": {
-        "encoder": EfficientNetEncoder,
+    "efficientnetst-b6": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b6"),
         "params": {
             "out_channels": (3, 56, 40, 72, 200, 576),
@@ -150,8 +152,8 @@ efficient_net_encoders = {
             "model_name": "efficientnet-b6",
         },
     },
-    "efficientnet-b7": {
-        "encoder": EfficientNetEncoder,
+    "efficientnetst-b7": {
+        "encoder": EfficientNetSTEncoder,
         "pretrained_settings": _get_pretrained_settings("efficientnet-b7"),
         "params": {
             "out_channels": (3, 64, 48, 80, 224, 640),
