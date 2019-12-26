@@ -1,0 +1,7 @@
+concat_features =
+[torch.Size([50, 6, 256, 256]),
+ torch.Size([50, 64, 128, 128]), X_00 (conv1)
+ torch.Size([50, 48, 64, 64]), X_10 (conv2)
+ torch.Size([50, 80, 32, 32]), X_20 (conv3)
+ torch.Size([50, 224, 16, 16]), X_30 (conv4)
+ torch.Size([50, 640, 8, 8])] X_40 (center)
