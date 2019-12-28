@@ -71,6 +71,7 @@ class Unet(SegmentationModel):
             use_batchnorm=decoder_use_batchnorm,
             center=True if encoder_name.startswith("vgg") else False,
             attention_type=decoder_attention_type,
+            third_conv=False,
         )
 
         self.segmentation_head = SegmentationHead(
