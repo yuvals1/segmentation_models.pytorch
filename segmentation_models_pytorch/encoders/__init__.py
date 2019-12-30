@@ -11,7 +11,7 @@ from .inceptionv4 import inceptionv4_encoders
 from .efficientnet import efficient_net_encoders
 from .xception import xception_encoders
 
-# from .efficientnetst import efficient_netst_encoders
+from .efficientnetst import efficient_netst_encoders
 
 from .mobilenet import mobilenet_encoders
 
@@ -19,7 +19,6 @@ from .mobilenet import mobilenet_encoders
 from ._preprocessing import preprocess_input
 
 encoders_weights = {'imagenet', 'imagenet+background', 'imagenet+5k', 'instagram'}
-
 encoders = {}
 encoders.update(resnet_encoders)
 encoders.update(dpn_encoders)
@@ -29,7 +28,7 @@ encoders.update(densenet_encoders)
 encoders.update(inceptionresnetv2_encoders)
 encoders.update(inceptionv4_encoders)
 encoders.update(efficient_net_encoders)
-# encoders.update(efficient_netst_encoders)
+encoders.update(efficient_netst_encoders)
 encoders.update(mobilenet_encoders)
 encoders.update(xception_encoders)
 
@@ -57,7 +56,7 @@ def get_preprocessing_params(encoder_name, pretrained="imagenet"):
     settings = encoders[encoder_name]["pretrained_settings"]
 
     if pretrained not in settings.keys():
-        raise ValueError("Avaliable pretrained options {}".format(settings.keys()))
+        raise ValueError("Available pretrained options {}".format(settings.keys()))
 
     formatted_settings = {}
     formatted_settings["input_space"] = settings[pretrained].get("input_space")

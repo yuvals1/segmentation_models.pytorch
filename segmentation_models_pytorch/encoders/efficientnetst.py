@@ -21,37 +21,24 @@ Methods:
         also should support number of features according to specified depth, e.g. if depth = 5,
         number of feature tensors = 6 (one with same resolution as input and 5 downsampled),
         depth = 3 -> number of feature tensors = 4 (one with same resolution as input and 3 downsampled).
-        some
 """
 
-from efficientnet_pytorch import EfficientNetST
 from efficientnet_pytorch.utils import url_map, get_model_params
+from .efficientnet import EfficientNetEncoder
+from efficientnet_pytorch.model import get_same_padding_conv2d
+from torch import nn
 
-from ._base import EncoderMixin
-from ..base.module import Module
 
-
-class EfficientNetSTEncoder(EfficientNetST, EncoderMixin, Module):
+class EfficientNetSTEncoder(EfficientNetEncoder):
     def __init__(self, stage_idxs, out_channels, model_name, depth=5):
-
-        blocks_args, global_params = get_model_params(model_name, override_params=None)
-        super().__init__(blocks_args, global_params)
-
-        self._stage_idxs = list(stage_idxs) + [len(self._blocks)]
-        self._out_channels = out_channels
-        self._depth = depth
-        self._in_channels = 3
-
-        del self._fc
+        super().__init__(stage_idxs, out_channels, model_name, depth)
 
     def forward(self, x):
 
-        features = [x]
-
+        features = [self._swish(self._bn0_st(self._conv_stem_st(x)))]
         if self._depth > 0:
             x = self._swish(self._bn0(self._conv_stem(x)))
             features.append(x)
-            x = self._pool_stem(x)
 
         if self._depth > 1:
             skip_connection_idx = 0
@@ -59,10 +46,10 @@ class EfficientNetSTEncoder(EfficientNetST, EncoderMixin, Module):
                 drop_connect_rate = self._global_params.drop_connect_rate
                 if drop_connect_rate:
                     drop_connect_rate *= float(idx) / len(self._blocks)
-                x, block_features = block(x, drop_connect_rate=drop_connect_rate)
+                x = block(x, drop_connect_rate=drop_connect_rate)
                 if idx == self._stage_idxs[skip_connection_idx] - 1:
                     skip_connection_idx += 1
-                    features.append(block_features)
+                    features.append(x)
                     if skip_connection_idx + 1 == self._depth:
                         break
 
@@ -73,6 +60,15 @@ class EfficientNetSTEncoder(EfficientNetST, EncoderMixin, Module):
         state_dict.pop("_fc.bias") if '_fc.bias' in state_dict.keys() else print('fc.bias not in dict')
         state_dict.pop("_fc.weight") if '_fc.weight' in state_dict.keys() else print('fc.weight not in dict')
         super().load_state_dict(state_dict, **kwargs)
+        blocks_args, global_params = get_model_params('efficientnet-b0', override_params=None)
+        Conv2d = get_same_padding_conv2d(image_size=global_params.image_size)
+
+        self._conv_stem_st = Conv2d(3, 32, kernel_size=3, stride=1, bias=False)
+        self._conv_stem_st.weight.data = self._conv_stem.weight.data
+
+        bn_mom = 1 - global_params.batch_norm_momentum
+        bn_eps = global_params.batch_norm_epsilon
+        self._bn0_st = nn.BatchNorm2d(num_features=32, momentum=bn_mom, eps=bn_eps)
 
 
 def _get_pretrained_settings(encoder):

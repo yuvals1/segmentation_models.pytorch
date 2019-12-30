@@ -5,6 +5,5 @@ from .pspnet import PSPNet
 from .pan import PAN
 from .base import SegmentationHead, SegmentationModel, ClassificationHead, TwoHeadsSegmentationModel
 from .encoders import get_encoder
-
 from . import encoders
 from . import utils
